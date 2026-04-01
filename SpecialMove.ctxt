@@ -1,0 +1,7 @@
+#BlueJ class context
+comment0.target=SpecialMove
+comment1.params=r
+comment1.target=void\ move(SampleRole5)
+comment2.params=
+comment2.target=boolean\ isFinished()
+numComments=3

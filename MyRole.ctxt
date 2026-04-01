@@ -1,0 +1,17 @@
+#BlueJ class context
+comment0.target=MyRole
+comment1.params=x\ y\ w\ h\ jvx\ jvy\ bottom\ is
+comment1.target=MyRole(int,\ int,\ int,\ int,\ int,\ int,\ int,\ game.framework.ImageSequence[][])
+comment2.params=
+comment2.target=void\ run()
+comment3.params=mvState
+comment3.target=void\ setMoveState(IMoveState)
+comment4.params=
+comment4.target=boolean\ isJumping()
+comment5.params=
+comment5.target=boolean\ isUsingSpecialMove()
+comment6.params=e
+comment6.target=void\ keyPressed(java.awt.event.KeyEvent)
+comment7.params=e
+comment7.target=void\ keyReleased(java.awt.event.KeyEvent)
+numComments=8
