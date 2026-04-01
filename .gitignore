@@ -27,6 +27,7 @@ replay_pid*
 .DS_Store
 
 # Bundled JDK/runtime files (keep source project only)
+GameFramework/
 bin/
 conf/
 doc/
