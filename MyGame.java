@@ -1,9 +1,9 @@
 import game.framework.*;
 import java.util.*;
 import java.awt.*; //for Color.white
-import java.awt.event.*;
 public class MyGame {
     public static void main(String[] args) {
+    final String[] currentBgm = {"Gameboy.mp3"};
 //Step 1. 產生遊戲背景物件: 標題, 寬度, 高度, 背景顏色
     GameContext ctx = new GameContext ("MY Warrior Game", 1080, 720, Color.white){
         @Override
@@ -13,7 +13,7 @@ public class MyGame {
         
         @Override
         public String getBackgroundMusicPath(){
-            return "Gameboy.mp3";
+            return currentBgm[0];
         }
     } ;
 //Step 2. 產生遊戲物件 
@@ -30,8 +30,12 @@ public class MyGame {
                                 new ImageSequence("fly_left/" , "png", 1) },
                             { new ImageSequence("special_move/" , "png", 6) }
                          };  //建立角色分鏡圖
+
+    CoordinateTriggerSubject houseTrigger =
+        new CoordinateTriggerSubject(new Rectangle(560, 170, 140, 120), "house_music");
+    houseTrigger.addObserver(new MusicToggleObserver(gameEngine, currentBgm));
         
-    MyRole player = new MyRole(200, 350, 100, 100, 0, -30, 400, is);
+    MyRole player = new MyRole(200, 350, 100, 100, 0, -30, 400, is, houseTrigger);
     myroles.add(player ); 
     gameEngine.registerKeyEventHandler(player); //註冊接受鍵盤事件
     

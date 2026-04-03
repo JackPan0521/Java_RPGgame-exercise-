@@ -1,7 +1,7 @@
 #BlueJ class context
 comment0.target=MyRole
-comment1.params=x\ y\ w\ h\ jvx\ jvy\ bottom\ is
-comment1.target=MyRole(int,\ int,\ int,\ int,\ int,\ int,\ int,\ game.framework.ImageSequence[][])
+comment1.params=x\ y\ w\ h\ jvx\ jvy\ bottom\ is\ triggerSubject
+comment1.target=MyRole(int,\ int,\ int,\ int,\ int,\ int,\ int,\ game.framework.ImageSequence[][],\ PositionSubject)
 comment2.params=
 comment2.target=void\ run()
 comment3.params=mvState

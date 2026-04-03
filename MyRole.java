@@ -4,12 +4,15 @@ public class MyRole extends SampleRole5
 {
     IMoveState mvState = null;
     private final int jumpSpeed;
+    private final PositionSubject triggerSubject;
     
-    public MyRole(int x, int y, int w, int h ,int jvx, int jvy, int bottom, ImageSequence[][] is) {
+    public MyRole(int x, int y, int w, int h ,int jvx, int jvy, int bottom, ImageSequence[][] is,
+            PositionSubject triggerSubject) {
         this.x = x; this.y = y; this.w = w; this.h = h; this.jvx = jvx; this.jvy = jvy; this.bottom = bottom;
         this.is= is;
         this.mvState = new Stop();
         this.jumpSpeed = jvy;
+        this.triggerSubject = triggerSubject;
     }
     
     @Override
@@ -65,6 +68,12 @@ public class MyRole extends SampleRole5
 
         if (model != null) {
             model.setState(x, y);
+        }
+
+        if (triggerSubject != null) {
+            int centerX = x + w / 2;
+            int centerY = y + h / 2;
+            triggerSubject.onPositionChanged(centerX, centerY);
         }
     }
     
