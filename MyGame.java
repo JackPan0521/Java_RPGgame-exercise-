@@ -8,7 +8,7 @@ public class MyGame {
     GameContext ctx = new GameContext ("MY Warrior Game", 1080, 720, Color.white){
         @Override
         public String getBackgroundImgPath(){
-            return "background.png";
+            return "background2.png";
         }
         
         @Override
@@ -16,8 +16,8 @@ public class MyGame {
             return currentBgm[0];
         }
     } ;
-//Step 2. 產生遊戲物件 
-    Game gameEngine = new Game(ctx); //Game就是遊戲引擎
+//Step 2. 產生遊戲物件 (false: 啟用非固定視窗，鏡頭可跟角色移動)
+    Game gameEngine = new Game(ctx, false); //Game就是遊戲引擎
 //Step 3. 產生各種角色 (目前是空的)
     ArrayList<Role> myroles = new ArrayList<> (); //建立角色清單
     //[act][dir]: act:0 stop, act 1: walk, act 2: fly
@@ -35,9 +35,13 @@ public class MyGame {
         new CoordinateTriggerSubject(new Rectangle(560, 170, 140, 120), "house_music");
     houseTrigger.addObserver(new MusicToggleObserver(gameEngine, currentBgm));
         
-    MyRole player = new MyRole(200, 350, 100, 100, 0, -30, 400, is, houseTrigger);
+    MyRole player = new MyRole(200, 350, 100, 100, 0, -30, 400, is, houseTrigger, gameEngine);
     myroles.add(player ); 
+    gameEngine.setMainRole(player); //指定鏡頭跟隨主角
+    gameEngine.setSpace(0, 1408, 0, 768); //背景地圖範圍
+    gameEngine.setFurtherXY(120, 80); //緩衝型跟拍：靠近邊緣時才推動鏡頭
     gameEngine.registerKeyEventHandler(player); //註冊接受鍵盤事件
+    gameEngine.registerMouseMotionHandler(player); //註冊滑鼠移動事件
     
 //Step 4: 開始執行
     gameEngine.go(myroles);
