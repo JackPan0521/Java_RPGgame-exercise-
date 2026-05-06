@@ -2,6 +2,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Random;
 import javax.imageio.ImageIO;
 import game.framework.*; 
 public class MyRole extends SampleRole5
@@ -27,7 +30,13 @@ public class MyRole extends SampleRole5
     private final Image masterBallImage;
     private final Image pokeBallImage;
     private final Image premierBallImage;
-    
+    private final BallPool ballPool;
+    private final ArrayList<BallPickup> pickups = new ArrayList<>();
+    private int spawnTimer = 0;
+    private static final int SPAWN_INTERVAL = 200;
+    private static final int MAX_PICKUPS = 6;
+    private final Random spawnRandom = new Random();
+
     public MyRole(int x, int y, int w, int h ,int jvx, int jvy, int bottom, ImageSequence[][] is,
             PositionSubject triggerSubject, Game gameCtl) {
         this.x = x; this.y = y; this.w = w; this.h = h; this.jvx = jvx; this.jvy = jvy; this.bottom = bottom;
@@ -38,6 +47,8 @@ public class MyRole extends SampleRole5
         this.gameCtl = gameCtl;
         this.currentBallFactory = new PokeBallFactory();
         this.currentBallName = currentBallFactory.createBallItem().getName();
+        this.ballPool = new BallPool(20, 10, 3);
+        for (int i = 0; i < 4; i++) { spawnPickup(); }
         this.masterBallImage = loadBallImage("Master_Ball.png");
         this.pokeBallImage = loadBallImage("Poke_Ball.png");
         this.premierBallImage = loadBallImage("Premier_ball.png");
@@ -101,12 +112,12 @@ public class MyRole extends SampleRole5
             setMoveState(new Stop());
         }
 
-        // 邊界阻擋
-        int screenW = 1080, screenH = 720;
-        if (x < -10) x = -10;
+        // 邊界阻擋（以地圖大小為準）
+        int mapW = 1408, mapH = 768;
+        if (x < 0) x = 0;
         if (y < 0) y = 0;
-        if (x > screenW - w + 10) x = screenW - w +10;
-        if (y > screenH - h) y = screenH - h;
+        if (x > mapW - w) x = mapW - w;
+        if (y > mapH - h) y = mapH - h;
 
         if (model != null) {
             model.setState(x, y);
@@ -119,8 +130,14 @@ public class MyRole extends SampleRole5
         }
 
         updateProjectile();
+        spawnTimer++;
+        if (spawnTimer >= SPAWN_INTERVAL && pickups.size() < MAX_PICKUPS) {
+            spawnPickup();
+            spawnTimer = 0;
+        }
+        checkPickupCollision();
     }
-    
+
     private void setMoveState(IMoveState mvState) {
         this.mvState =mvState ;
     }
@@ -140,7 +157,11 @@ public class MyRole extends SampleRole5
     }
 
     private void throwBall() {
-        BallItem ball = currentBallFactory.createBallItem();
+        BallItem ball = ballPool.borrowBall(currentBallFactory);
+        if (ball == null) {
+            System.out.println(currentBallName + " 用完了!!");
+            return;
+        }
         CatchRule rule = currentBallFactory.createCatchRule();
         ThrowEffect effect = currentBallFactory.createThrowEffect();
 
@@ -158,7 +179,11 @@ public class MyRole extends SampleRole5
     }
 
     private void throwBallFixed(int vx, int vy) {
-        BallItem ball = currentBallFactory.createBallItem();
+        BallItem ball = ballPool.borrowBall(currentBallFactory);
+        if (ball == null) {
+            System.out.println(currentBallName + " 用完了!!");
+            return;
+        }
         CatchRule rule = currentBallFactory.createCatchRule();
         ThrowEffect effect = currentBallFactory.createThrowEffect();
 
@@ -244,7 +269,16 @@ public class MyRole extends SampleRole5
         return pokeBallImage;
     }
 
+    private int getCurrentBallCount() {
+        if ("Master Ball".equals(currentBallName)) return ballPool.getMasterCount();
+        if ("Premier Ball".equals(currentBallName)) return ballPool.getPremierCount();
+        return ballPool.getPokeCount();
+    }
+
     private void drawHeldBall(Graphics g) {
+        if (getCurrentBallCount() <= 0) {
+            return;
+        }
         Point hand = getHandPosition();
         int handX = hand.x;
         int handY = hand.y;
@@ -269,11 +303,50 @@ public class MyRole extends SampleRole5
         return new Point(handX, handY);
     }
 
+    private void drawBallInventory(Graphics g) {
+        int panelX = 1750;
+        int panelY = 50;
+
+        Graphics2D g2d = (Graphics2D) g;
+        java.awt.geom.AffineTransform oldTransform = g2d.getTransform();
+        g2d.setTransform(new java.awt.geom.AffineTransform());
+        Composite oldComposite = g2d.getComposite();
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.78f));
+        g2d.setColor(new Color(20, 20, 20));
+        int panelHeight = (getCurrentBallCount() <= 0) ? 244 : 200;
+        g2d.fillRoundRect(panelX, panelY, 420, panelHeight, 14, 14);
+        g2d.setComposite(oldComposite);
+
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("SansSerif", Font.BOLD, 30));
+        g2d.drawString("Ball Pool", panelX + 12, panelY + 44);
+
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 28));
+        int pokeCount = ballPool.getPokeCount();
+        int premierCount = ballPool.getPremierCount();
+        int masterCount = ballPool.getMasterCount();
+        g2d.setColor(pokeCount > 0 ? new Color(255, 120, 120) : Color.RED);
+        g2d.drawString("Poke Ball: " + pokeCount + (pokeCount == 0 ? "  !!" : ""), panelX + 12, panelY + 92);
+        g2d.setColor(premierCount > 0 ? new Color(245, 245, 245) : Color.RED);
+        g2d.drawString("Premier Ball: " + premierCount + (premierCount == 0 ? "  !!" : ""), panelX + 12, panelY + 132);
+        g2d.setColor(masterCount > 0 ? new Color(190, 140, 255) : Color.RED);
+        g2d.drawString("Master Ball: " + masterCount + (masterCount == 0 ? "  !!" : ""), panelX + 12, panelY + 172);
+
+        if (getCurrentBallCount() <= 0) {
+            g2d.setFont(new Font("SansSerif", Font.BOLD, 28));
+            g2d.setColor(Color.RED);
+            g2d.drawString(currentBallName + " 用完了!", panelX + 12, panelY + 224);
+        }
+        g2d.setTransform(oldTransform);
+    }
+
     @Override
     public void display(Graphics g) {
+        drawPickups(g);
         super.display(g);
         drawGuideLine(g);
         drawHeldBall(g);
+        drawBallInventory(g);
 
         if (projectileActive) {
             Image ballImage = getBallImage();
@@ -288,6 +361,71 @@ public class MyRole extends SampleRole5
                 g.drawOval(projectileX - 8, projectileY - 8, 16, 16);
                 g.drawLine(projectileX - 8, projectileY, projectileX + 8, projectileY);
             }
+        }
+    }
+
+    private void spawnPickup() {
+        int px = 60 + spawnRandom.nextInt(1288);
+        int py = 60 + spawnRandom.nextInt(648);
+        int r = spawnRandom.nextInt(10);
+        BallFactory factory;
+        if (r < 6) {
+            factory = new PokeBallFactory();
+        } else if (r < 9) {
+            factory = new PremierBallFactory();
+        } else {
+            factory = new MasterBallFactory();
+        }
+        pickups.add(new BallPickup(px, py, factory.createBallItem()));
+    }
+
+    private void checkPickupCollision() {
+        Iterator<BallPickup> it = pickups.iterator();
+        Rectangle playerRect = new Rectangle(x + 10, y + 10, w - 20, h - 20);
+        while (it.hasNext()) {
+            BallPickup pickup = it.next();
+            Rectangle pickupRect = new Rectangle(
+                pickup.x - BallPickup.SIZE / 2,
+                pickup.y - BallPickup.SIZE / 2,
+                BallPickup.SIZE, BallPickup.SIZE);
+            if (playerRect.intersects(pickupRect)) {
+                ballPool.returnBall(pickup.ballItem);
+                System.out.println("Picked up: " + pickup.ballItem.getName());
+                it.remove();
+            }
+        }
+    }
+
+    private Image getImageForBallName(String name) {
+        if ("Master Ball".equals(name)) return masterBallImage;
+        if ("Premier Ball".equals(name)) return premierBallImage;
+        return pokeBallImage;
+    }
+
+    private Color getBallColorForName(String name) {
+        if ("Master Ball".equals(name)) return new Color(128, 64, 192);
+        if ("Premier Ball".equals(name)) return Color.WHITE;
+        return new Color(220, 20, 60);
+    }
+
+    private void drawPickups(Graphics g) {
+        int half = BallPickup.SIZE / 2;
+        Graphics2D g2d = (Graphics2D) g;
+        for (BallPickup pickup : pickups) {
+            Image img = getImageForBallName(pickup.ballItem.getName());
+            if (img != null) {
+                g.drawImage(img, pickup.x - half, pickup.y - half,
+                    BallPickup.SIZE, BallPickup.SIZE, null);
+            } else {
+                Color c = getBallColorForName(pickup.ballItem.getName());
+                g.setColor(c);
+                g.fillOval(pickup.x - half, pickup.y - half, BallPickup.SIZE, BallPickup.SIZE);
+                g.setColor(Color.BLACK);
+                g.drawOval(pickup.x - half, pickup.y - half, BallPickup.SIZE, BallPickup.SIZE);
+            }
+            g2d.setColor(new Color(255, 255, 100, 140));
+            g2d.drawOval(pickup.x - half - 4, pickup.y - half - 4,
+                BallPickup.SIZE + 8, BallPickup.SIZE + 8);
         }
     }
 
@@ -386,6 +524,16 @@ public class MyRole extends SampleRole5
                 break;
             case KeyEvent.VK_5:
                 setBallFactory(new MasterBallFactory());
+                break;
+            case KeyEvent.VK_6:
+                dx = 0;
+                dy = 0;
+                setMoveState(new SnakeWalk());
+                break;
+            case KeyEvent.VK_7:
+                dx = 0;
+                dy = 0;
+                setMoveState(new SpiralWalk());
                 break;
             case KeyEvent.VK_C:
                 throwBall();
