@@ -1,19 +1,27 @@
 public class SnakeWalk implements IMoveState {
+    private static final int DEFAULT_DURATION_FRAMES = 60;
+
     private int frame = 0;
     private int verticalDir = 1;
+    private final int durationFrames;
 
     private final int speedX;
     private final int waveStep;
     private final int switchPeriod;
 
     public SnakeWalk() {
-        this(8, 3, 12);
+        this(8, 3, 12, DEFAULT_DURATION_FRAMES);
     }
 
     public SnakeWalk(int speedX, int waveStep, int switchPeriod) {
+        this(speedX, waveStep, switchPeriod, DEFAULT_DURATION_FRAMES);
+    }
+
+    public SnakeWalk(int speedX, int waveStep, int switchPeriod, int durationFrames) {
         this.speedX = speedX;
         this.waveStep = waveStep;
         this.switchPeriod = switchPeriod;
+        this.durationFrames = durationFrames;
     }
 
     @Override
@@ -29,5 +37,9 @@ public class SnakeWalk implements IMoveState {
 
         r.setDim1(1);
         r.setDim2((r.getDir() == 1) ? 1 : 0);
+    }
+
+    public boolean isFinished() {
+        return frame >= durationFrames;
     }
 }
